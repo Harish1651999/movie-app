@@ -5,22 +5,46 @@ import MovieList from "./components/MovieList";
 function App() {
   const [movies, setMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   async function fetchMoviesHandler() {
     setIsLoading(true);
-    const reponse = await fetch("https://swapi.dev/api/films/");
-    const data = await reponse.json();
+    setError(null);
+    try {
+      const response = await fetch("https://swapi.dev/api/films/");
+      if (!response.ok) {
+        throw new Error("Something went wrong!");
+      }
 
-    const transformedMovies = data.results.map((movieData) => {
-      return {
-        id: movieData.episode_id,
-        title: movieData.title,
-        openingText: movieData.opening_crawl,
-        releaseDate: movieData.release_date,
-      };
-    });
-    setMovies(transformedMovies);
+      const data = await response.json();
+
+      const transformedMovies = data.results.map((movieData) => {
+        return {
+          id: movieData.episode_id,
+          title: movieData.title,
+          openingText: movieData.opening_crawl,
+          releaseDate: movieData.release_date,
+        };
+      });
+      setMovies(transformedMovies);
+    } catch (error) {
+      setError(error.message);
+    }
     setIsLoading(false);
+  }
+
+  let content = <p className="text-dark">No movies found.</p>;
+
+  if (movies.length > 0) {
+    content = <MovieList movies={movies} />;
+  }
+
+  if (error) {
+    content = <p className="text-dark">{error}</p>;
+  }
+
+  if (isLoading) {
+    content = <p className="text-dark">Loading...</p>;
   }
 
   return (
@@ -28,11 +52,7 @@ function App() {
       <section>
         <button onClick={fetchMoviesHandler}>Fetch Movies</button>
       </section>
-      <section>
-        {!isLoading && movies.length > 0 && <MovieList movies={movies} />}
-        {!isLoading && <p className="text-dark">No movies found.</p>}
-        {isLoading && <p className="text-dark">Loading...</p>}
-      </section>
+      <section>{content}</section>
     </>
   );
 }
